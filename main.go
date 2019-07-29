@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -62,12 +60,7 @@ func ProxyHandler(response http.ResponseWriter, request *http.Request) {
 
 // CreateGrpcClientConn CreateGrpcClientConn
 func CreateGrpcClientConn(url string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	symbol, err := MakeMD5(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	client := clientPool[url+symbol]
+	client := clientPool[url]
 	if client != nil {
 		return client, nil
 	}
@@ -76,18 +69,6 @@ func CreateGrpcClientConn(url string, opts ...grpc.DialOption) (*grpc.ClientConn
 	if err != nil {
 		return nil, err
 	}
-
+	clientPool[url] = conn
 	return conn, nil
-}
-
-// MakeMD5 is make md5.
-func MakeMD5(target interface{}) (string, error) {
-	data, err := json.Marshal(target)
-	if err != nil {
-		return "", err
-	}
-
-	h := md5.New()
-	h.Write(data)
-	return hex.EncodeToString(h.Sum(nil)), nil
 }
